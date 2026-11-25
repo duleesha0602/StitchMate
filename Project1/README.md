@@ -32,28 +32,8 @@ The backend is organized into clean, independent modules inside the [`modules/`]
 
 ---
 
-## 🚀 How to Run the Project
-
-1. **Start XAMPP MySQL and Apache**:
-   - Ensure MySQL and Apache are started in the XAMPP Control Panel.
-   - phpMyAdmin is accessible at: [http://localhost/phpmyadmin/](http://localhost/phpmyadmin/)
-
-2. **Run Flask Application**:
-   Open a terminal in `C:\Users\PC\Desktop\Project1` and run:
-   ```bash
-   python app.py
-   ```
-   Or double-click **`Start_StitchMate.bat`** on your Desktop!
-   Open your browser at: **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
 ---
 
-## 🔑 Default Login Credentials
 
-### 1. Tailor Account (Master Atelier)
-- **Email / Username:** `tailor@stitchmate.lk`
-- **Password:** `tailor123`
 
-### 2. Online Customer Account (Nilu)
-- **Username / ID:** `nilu` (or `CUS001`)
-- **Password:** `customer123`
