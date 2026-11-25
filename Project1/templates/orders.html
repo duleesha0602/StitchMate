@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Orders'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'Orders'|t }}</h1>
+    </div>
+    {% if session.get('role') == 'tailor' %}
+        <a href="{{ url_for('orders.order_new') }}" class="btn">
+            <i class="fa-solid fa-plus"></i> {{ 'NewOrder'|t }}
+        </a>
+    {% endif %}
+</div>
+
+<!-- Filter Pills matching screenshot ss4.PNG + Cancelled (Req 4) -->
+<div class="filter-bar">
+    <a href="{{ url_for('orders.orders_list', status='all') }}" class="filter-pill {% if current_status == 'all' or not current_status %}active{% endif %}">
+        {{ 'All'|t }}
+    </a>
+    <a href="{{ url_for('orders.orders_list', status='pending') }}" class="filter-pill {% if current_status == 'pending' %}active{% endif %}">
+        {{ 'Pending'|t }}
+    </a>
+    <a href="{{ url_for('orders.orders_list', status='cutting') }}" class="filter-pill {% if current_status == 'cutting' %}active{% endif %}">
+        {{ 'Cutting'|t }}
+    </a>
+    <a href="{{ url_for('orders.orders_list', status='stitching') }}" class="filter-pill {% if current_status == 'stitching' %}active{% endif %}">
+        {{ 'Stitching'|t }}
+    </a>
+    <a href="{{ url_for('orders.orders_list', status='ready') }}" class="filter-pill {% if current_status == 'ready' %}active{% endif %}">
+        {{ 'Ready'|t }}
+    </a>
+    <a href="{{ url_for('orders.orders_list', status='cancelled') }}" class="filter-pill {% if current_status == 'cancelled' %}active{% endif %}">
+        {{ 'Cancelled'|t }}
+    </a>
+</div>
+
+<!-- Orders Table matching screenshot ss4.PNG -->
+<div class="table-container">
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th>Order</th>
+                <th>{{ 'Customers'|t }}</th>
+                <th>{{ 'Garment'|t }}</th>
+                <th>{{ 'Due'|t }}</th>
+                <th>{{ 'Total'|t }}</th>
+                <th>{{ 'Balance'|t }}</th>
+                <th>{{ 'Status'|t }}</th>
+                <th style="text-align: right; padding-right: 28px;">{{ 'Actions'|t }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for o in orders %}
+                <tr>
+                    <td style="font-weight: 700; color: var(--dark-brown);">{{ o.order_code }}</td>
+                    <td style="font-weight: 500;">
+                        <a href="{{ url_for('customers.customer_profile', customer_id=o.customer_id) if session.get('role') == 'tailor' else '#' }}" style="color: var(--dark-brown); text-decoration: none;">
+                            {{ o.nickname }}
+                        </a>
+                    </td>
+                    <td>{{ o.clothing_type }}</td>
+                    <td>{{ o.due_date }}</td>
+                    <td>LKR {{ '{:,.0f}'.format(o.total_price) }}</td>
+                    <td style="font-weight: 600;">LKR {{ '{:,.0f}'.format(o.remaining_balance) }}</td>
+                    <td>
+                        <span class="badge badge-{{ o.status|lower }}">
+                            {{ o.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="btn-action-view">{{ 'View'|t }}</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        No orders found in this category.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

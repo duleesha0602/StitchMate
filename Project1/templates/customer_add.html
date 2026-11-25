@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'AddCustomer'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'AddCustomer'|t }}</h1>
+        <p class="page-subtitle">Register a new client or atelier patron.</p>
+    </div>
+    <a href="{{ url_for('customers.customers_list') }}" class="btn btn-secondary">
+        &larr; Back to Customers
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('customers.customer_add') }}" enctype="multipart/form-data">
+    <!-- Section 1: Basic Information -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">01</span> Customer Information
+        </h2>
+        
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">Customer ID (Auto-generated)</label>
+                <input type="text" class="form-control" value="{{ next_code }}" readonly style="background-color: #FAF4F0; font-weight: 600;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ 'Name'|t }} <span class="req">*</span></label>
+                <input type="text" name="name" class="form-control" placeholder="Nilmini Perera" required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ 'Nickname'|t }} <span class="req">*</span></label>
+                <input type="text" name="nickname" class="form-control" placeholder="Nilu" required>
+            </div>
+        </div>
+
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">{{ 'Gender'|t }} <span class="req">*</span></label>
+                <select name="gender" class="form-control" required>
+                    <option value="Female">{{ 'Female'|t }}</option>
+                    <option value="Male">{{ 'Male'|t }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ 'PrimaryContact'|t }} <span class="req">*</span></label>
+                <input type="tel" name="primary_contact" class="form-control" placeholder="0761234567" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Additional Contact Number</label>
+                <input type="tel" name="additional_contact" class="form-control" placeholder="0711234567">
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">{{ 'Address'|t }}</label>
+                <textarea name="address" class="form-control" rows="2" placeholder="Temple Road, Maharagama"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Profile Photo (Optional)</label>
+                <input type="file" name="photo" class="form-control" accept="image/*">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Account Access (Conditional) with Password Show/Hide (Req 15) -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">02</span> Online Access Setup
+        </h2>
+
+        <div class="form-group">
+            <label class="form-label">Create Online Login Account? <span class="req">*</span></label>
+            <div class="form-radio-group">
+                <label class="form-radio-label">
+                    <input type="radio" name="create_login" value="no" checked onchange="toggleLoginFields(false)">
+                    <span>No (Walk-in Customer only)</span>
+                </label>
+                <label class="form-radio-label">
+                    <input type="radio" name="create_login" value="yes" onchange="toggleLoginFields(true)">
+                    <span>Yes (Enable customer online locker & notifications)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Conditional login fields -->
+        <div id="loginCredentials" style="display: none; margin-top: 20px; padding: 20px; background: #FAF3EF; border-radius: 14px; border: 1px dashed var(--dusty-pink-dark);">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Online Username <span class="req">*</span></label>
+                    <input type="text" name="username" id="usernameInput" class="form-control" placeholder="nilu">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password <span class="req">*</span></label>
+                    <div class="password-field-wrapper">
+                        <input type="password" name="password" id="passwordInput" class="form-control" placeholder="••••••••">
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('passwordInput', 'eye_cust_reg')" title="{{ 'ShowPassword'|t }}">
+                            <i id="eye_cust_reg" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                Customer will use these credentials to log in and inspect measurements, orders, and ready notifications.
+            </p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 14px; margin-bottom: 40px;">
+        <button type="submit" class="btn">
+            <i class="fa-solid fa-check"></i> Save Customer
+        </button>
+        <a href="{{ url_for('customers.customers_list') }}" class="btn btn-secondary">
+            Cancel
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleLoginFields(show) {
+        const box = document.getElementById('loginCredentials');
+        const userInp = document.getElementById('usernameInput');
+        const passInp = document.getElementById('passwordInput');
+        
+        box.style.display = show ? 'block' : 'none';
+        userInp.required = show;
+        passInp.required = show;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Measurements'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'Measurements'|t }}</h1>
+        <p class="page-subtitle">{{ 'MeasurementsSubtitle'|t }}</p>
+    </div>
+    {% if session.get('role') == 'tailor' %}
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ url_for('measurements.custom_types') }}" class="btn btn-secondary">
+                <i class="fa-solid fa-sliders"></i> {{ 'CustomTypes'|t }}
+            </a>
+            <a href="{{ url_for('measurements.measurement_add') }}" class="btn">
+                <i class="fa-solid fa-plus"></i> {{ 'AddMeasurement'|t }}
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Measurements Table matching screenshot ss3.PNG + Extended Fields (Req 7, 11) -->
+<div class="table-container">
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th>{{ 'ID'|t }}</th>
+                <th>{{ 'Customers'|t }}</th>
+                <th>{{ 'Date'|t }}</th>
+                <th>{{ 'Unit'|t }}</th>
+                <th>{{ 'Chest'|t }}</th>
+                <th>{{ 'Waist'|t }}</th>
+                <th>{{ 'Hip'|t }}</th>
+                <th>{{ 'Shoulder'|t }}</th>
+                <th>{{ 'SleeveLength'|t }}</th>
+                <th>{{ 'DressLength'|t }}</th>
+                <th>{{ 'Neck'|t }}</th>
+                <th>{{ 'ArmLength'|t }}</th>
+                <th>{{ 'TrouserLength'|t }}</th>
+                <th>{{ 'Inseam'|t }}</th>
+                <th style="text-align: right; padding-right: 20px;">{{ 'Actions'|t }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in measurements %}
+                <tr>
+                    <td style="font-weight: 700; color: var(--dark-brown);">{{ m.measurement_code }}</td>
+                    <td style="font-weight: 500;">
+                        <a href="{{ url_for('customers.customer_profile', customer_id=m.customer_id) }}" style="color: var(--dark-brown); text-decoration: none;">
+                            {{ m.nickname }} <span style="font-size: 12px; color: var(--text-muted);">({{ m.customer_code }})</span>
+                        </a>
+                    </td>
+                    <td>{{ m.measurement_date }}</td>
+                    <td><span class="badge" style="background: #FAF0E8; color: var(--dark-brown);">{{ m.unit }}</span></td>
+                    <td>{{ m.chest if m.chest is not none else '—' }}</td>
+                    <td>{{ m.waist if m.waist is not none else '—' }}</td>
+                    <td>{{ m.hip if m.hip is not none else '—' }}</td>
+                    <td>{{ m.shoulder if m.shoulder is not none else '—' }}</td>
+                    <td>{{ m.sleeve_length if m.sleeve_length is not none else '—' }}</td>
+                    <td>{{ m.dress_length if m.dress_length is not none else '—' }}</td>
+                    <td>{{ m.neck if m.neck is not none else '—' }}</td>
+                    <td>{{ m.arm_length if m.arm_length is not none else '—' }}</td>
+                    <td>{{ m.trouser_length if m.trouser_length is not none else '—' }}</td>
+                    <td>{{ m.inseam if m.inseam is not none else '—' }}</td>
+                    <td style="text-align: right;">
+                        <form method="POST" action="{{ url_for('measurements.measurement_delete', measurement_id=m.id) }}" style="display: inline;" onsubmit="return confirm('{{ 'DeleteMeasurementConfirm'|t }}');">
+                            <button type="submit" class="btn-action-delete">
+                                <i class="fa-solid fa-trash-can"></i> {{ 'Delete'|t }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="15" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        No measurement records found.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

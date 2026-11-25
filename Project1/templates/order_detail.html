@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Order {{ order.order_code }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ order.order_code }} · {{ order.clothing_type }}</h1>
+        <p class="page-subtitle">Commission for {{ order.nickname }} ({{ order.customer_name }})</p>
+    </div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        {% if session.get('role') == 'tailor' %}
+            <a href="{{ url_for('customers.customer_profile', customer_id=order.customer_id) }}" class="btn btn-secondary">
+                <i class="fa-solid fa-user"></i> Customer Profile
+            </a>
+            <a href="{{ url_for('orders.orders_list') }}" class="btn btn-secondary">
+                &larr; Back to Orders
+            </a>
+        {% else %}
+            <a href="{{ url_for('customer_portal.customer_portal') }}" class="btn btn-secondary">
+                &larr; Back to My Locker
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Order Status Banner -->
+<div class="card" style="margin-bottom: 24px; background: #FFFFFF; border-left: 6px solid var(--soft-brown);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <span style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Current State:</span>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
+                <span class="badge badge-{{ order.status|lower }}" style="font-size: 15px; padding: 6px 18px;">
+                    {{ order.status }}
+                </span>
+                <span style="font-size: 14px; color: var(--text-muted);">{{ 'Due'|t }}: <strong>{{ order.due_date }}</strong></span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <!-- Tailor Status Update Form -->
+            {% if session.get('role') == 'tailor' %}
+                <form method="POST" action="{{ url_for('orders.order_update_status', order_id=order.id) }}" style="display: flex; gap: 10px; align-items: center;">
+                    <select name="new_status" class="form-control" style="width: auto; min-width: 140px; font-weight: 600;">
+                        <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Cutting" {% if order.status == 'Cutting' %}selected{% endif %}>Cutting</option>
+                        <option value="Stitching" {% if order.status == 'Stitching' %}selected{% endif %}>Stitching</option>
+                        <option value="Ready" {% if order.status == 'Ready' %}selected{% endif %}>Ready</option>
+                        <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                    <input type="text" name="note" class="form-control" placeholder="Optional status note..." style="width: 180px;">
+                    <button type="submit" class="btn btn-sm">
+                        <i class="fa-solid fa-arrow-right"></i> {{ 'UpdateStatus'|t }}
+                    </button>
+                </form>
+            {% endif %}
+
+            <!-- Customer Cancel Order for Pending status only (Req 4) -->
+            {% if order.status == 'Pending' %}
+                <form method="POST" action="{{ url_for('orders.order_cancel', order_id=order.id) }}" onsubmit="return confirm('{{ 'CancelOrderConfirm'|t }}');">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fa-solid fa-ban"></i> {{ 'CancelOrder'|t }}
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="form-grid-3" style="align-items: start;">
+    <!-- Column 1: Financials & Due Date -->
+    <div class="card" style="grid-column: span 1;">
+        <h3 class="card-title" style="font-size: 20px;">Financials & Due Date</h3>
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 14px; margin-top: 15px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);">{{ 'Total'|t }}:</span>
+                <strong>LKR {{ '{:,.2f}'.format(order.total_price) }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                <span style="color: var(--text-muted);">{{ 'Advance'|t }}:</span>
+                <span style="color: #2F633E; font-weight: 600;">LKR {{ '{:,.2f}'.format(order.advance_amount) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <span style="color: var(--dark-brown); font-weight: 600;">{{ 'Balance'|t }}:</span>
+                <span style="font-size: 18px; font-weight: 700; color: #8C482A;">LKR {{ '{:,.2f}'.format(order.remaining_balance) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Commission Date:</span>
+                <span>{{ order.order_date }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Completion Due:</span>
+                <span style="font-weight: 600;">{{ order.due_date }}</span>
+            </div>
+        </div>
+
+        {% if measurement %}
+        <h3 class="card-title" style="font-size: 20px; margin-top: 25px;">Associated Measurement</h3>
+        <div style="background: #FAF4F0; padding: 14px; border-radius: 12px; font-size: 13px;">
+            <div style="font-weight: 700; margin-bottom: 4px;">{{ measurement.measurement_code }} · {{ measurement.unit }}</div>
+            <div style="color: var(--text-muted); margin-bottom: 8px;">Recorded on {{ measurement.measurement_date }}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div>Chest: <strong>{{ measurement.chest or '—' }}</strong></div>
+                <div>Waist: <strong>{{ measurement.waist or '—' }}</strong></div>
+                <div>Hip: <strong>{{ measurement.hip or '—' }}</strong></div>
+                <div>Shoulder: <strong>{{ measurement.shoulder or '—' }}</strong></div>
+                <div>Sleeve: <strong>{{ measurement.sleeve_length or '—' }}</strong></div>
+                <div>Length: <strong>{{ measurement.dress_length or '—' }}</strong></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Column 2 & 3: Design, Fabric & History -->
+    <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 24px;">
+        <!-- Design & Fabric Information -->
+        <div class="card" style="margin-bottom: 0;">
+            <h3 class="card-title" style="font-size: 22px;">Design & Fabric Specifications</h3>
+            
+            <div class="form-grid-2" style="margin-top: 15px;">
+                <!-- Design -->
+                <div style="background: #FDFAF8; border: 1px solid var(--border-color); border-radius: 14px; padding: 16px;">
+                    <h4 style="font-size: 15px; margin-bottom: 8px; color: var(--soft-brown);">
+                        <i class="fa-solid fa-pen-ruler"></i> Design Notes
+                    </h4>
+                    <p style="font-size: 14px; line-height: 1.5; margin-bottom: 12px;">
+                        {{ order.design_description or 'No specific design notes entered.' }}
+                    </p>
+                    {% if order.design_photo %}
+                        <div style="margin-top: 8px;">
+                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Design Reference:</span>
+                            <img src="{{ url_for('static', filename='uploads/' ~ order.design_photo) }}" alt="Design" style="max-width: 100%; max-height: 180px; border-radius: 8px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Fabric -->
+                <div style="background: #FDFAF8; border: 1px solid var(--border-color); border-radius: 14px; padding: 16px;">
+                    <h4 style="font-size: 15px; margin-bottom: 8px; color: var(--soft-brown);">
+                        <i class="fa-solid fa-layer-group"></i> Fabric Details
+                    </h4>
+                    <div style="font-size: 13px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+                        <div>Type: <strong>{{ order.fabric_type or 'Customer Provided' }}</strong></div>
+                        <div>Colour: <strong>{{ order.fabric_colour or 'Unspecified' }}</strong></div>
+                        <div>Notes: {{ order.fabric_description or '—' }}</div>
+                    </div>
+                    {% if order.fabric_photo %}
+                        <div style="margin-top: 8px;">
+                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Fabric Swatch:</span>
+                            <img src="{{ url_for('static', filename='uploads/' ~ order.fabric_photo) }}" alt="Fabric" style="max-width: 100%; max-height: 180px; border-radius: 8px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Status Progression History -->
+        <div class="card" style="margin-bottom: 0;">
+            <h3 class="card-title" style="font-size: 22px; margin-bottom: 16px;">Production Progress History</h3>
+            <table class="table-custom" style="font-size: 13px;">
+                <thead>
+                    <tr>
+                        <th>Old State</th>
+                        <th>New State</th>
+                        <th>Updated By</th>
+                        <th>Timestamp</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in status_history %}
+                        <tr>
+                            <td>{{ h.old_status or 'New Order' }}</td>
+                            <td>
+                                <span class="badge badge-{{ h.new_status|lower }}" style="font-size: 11px;">
+                                    {{ h.new_status }}
+                                </span>
+                            </td>
+                            <td>{{ h.changed_by }}</td>
+                            <td>{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else '-' }}</td>
+                            <td>{{ h.note or '—' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                                No status changes recorded yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

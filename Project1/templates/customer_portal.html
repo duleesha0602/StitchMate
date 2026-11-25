@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'MyLocker'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<!-- Customer Dashboard Photo Banner (Req 2) -->
+<div class="dashboard-banner customer-banner">
+    <div class="banner-content">
+        <h1 class="banner-title">Welcome, {{ customer.nickname }}</h1>
+        <p class="banner-desc">
+            Your personal digital measurement locker and clothing commission tracker.
+        </p>
+        {% if tailor_profile %}
+        <div style="margin-top: 18px;">
+            <a href="tel:{{ tailor_profile.primary_contact }}" class="btn" style="background: #FFFFFF; color: var(--dark-brown); font-weight: 700;">
+                <i class="fa-solid fa-phone"></i> {{ 'CallMyTailor'|t }} ({{ tailor_profile.primary_contact }})
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Atelier Artisan Card (Req 6: Customer -> Tailor Call Allowed) -->
+{% if tailor_profile %}
+<div class="card" style="background: #FFFFFF; border-left: 6px solid var(--soft-brown); margin-bottom: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            {% if tailor_profile.photo %}
+                <img src="{{ url_for('static', filename='uploads/' ~ tailor_profile.photo) }}" alt="Tailor" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid var(--dusty-pink);">
+            {% endif %}
+            <div>
+                <span style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">{{ 'AtelierArtisan'|t }}:</span>
+                <h3 style="font-size: 20px; margin-top: 2px;">{{ tailor_profile.shop_name }} · {{ tailor_profile.name }}</h3>
+                <p style="font-size: 13px; color: var(--text-muted);">
+                    <i class="fa-solid fa-location-dot"></i> {{ tailor_profile.address or 'Sri Lanka' }}
+                </p>
+            </div>
+        </div>
+        <a href="tel:{{ tailor_profile.primary_contact }}" class="btn btn-sm">
+            <i class="fa-solid fa-phone"></i> {{ 'CallMyTailor'|t }}
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Stats for Customer -->
+<div class="stats-grid">
+    <div class="stat-card highlight">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value">{{ '%02d' % customer_orders|length }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ 'Pending'|t }}</div>
+        <div class="stat-value">{{ '%02d' % (customer_orders|selectattr('status', 'equalto', 'Pending')|list|length) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value">{{ '%02d' % (customer_orders|rejectattr('status', 'in', ['Pending', 'Ready', 'Cancelled'])|list|length) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">{{ 'Ready'|t }}</div>
+        <div class="stat-value">{{ '%02d' % (customer_orders|selectattr('status', 'equalto', 'Ready')|list|length) }}</div>
+    </div>
+</div>
+
+<!-- Customer's Active Orders & Cancel Pending Order (Req 4) -->
+<div class="card">
+    <h2 class="card-title">{{ 'MyOrders'|t }}</h2>
+    <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color);">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Order Code</th>
+                    <th>{{ 'Garment'|t }}</th>
+                    <th>{{ 'Due'|t }}</th>
+                    <th>{{ 'Total'|t }}</th>
+                    <th>{{ 'Advance'|t }}</th>
+                    <th>{{ 'Balance'|t }}</th>
+                    <th>{{ 'Status'|t }}</th>
+                    <th style="text-align: right; padding-right: 24px;">{{ 'Actions'|t }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in customer_orders %}
+                    <tr>
+                        <td style="font-weight: 700; color: var(--dark-brown);">{{ o.order_code }}</td>
+                        <td style="font-weight: 500;">{{ o.clothing_type }}</td>
+                        <td>{{ o.due_date }}</td>
+                        <td>LKR {{ '{:,.2f}'.format(o.total_price) }}</td>
+                        <td style="color: #2F633E;">LKR {{ '{:,.2f}'.format(o.advance_amount) }}</td>
+                        <td style="font-weight: 700; color: #8C482A;">LKR {{ '{:,.2f}'.format(o.remaining_balance) }}</td>
+                        <td>
+                            <span class="badge badge-{{ o.status|lower }}">{{ o.status }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="action-group" style="justify-content: flex-end;">
+                                <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="btn-action-view">{{ 'View'|t }}</a>
+                                
+                                <!-- Cancel Order Button for Pending Orders only (Req 4) -->
+                                {% if o.status == 'Pending' %}
+                                    <button type="button" class="btn-action-delete" onclick="openCancelModal({{ o.id }}, '{{ o.order_code }}')">
+                                        {{ 'CancelOrder'|t }}
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            You have no active clothing orders.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Illustrative Measurement Guide (Req 7) -->
+<div class="guide-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 style="font-size: 22px; color: var(--dark-brown);"><i class="fa-solid fa-tape"></i> {{ 'MeasurementGuide'|t }}</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">How to measure yourself accurately for bespoke tailoring</p>
+        </div>
+        <span class="badge" style="background: var(--dusty-pink); color: var(--dark-brown); font-weight: 600;">Atelier Guide</span>
+    </div>
+    
+    <div class="guide-grid">
+        <div class="guide-step">
+            <div class="guide-step-title">1. Shoulder Width</div>
+            <div class="guide-step-desc">From shoulder seam to shoulder seam across upper back.</div>
+        </div>
+        <div class="guide-step">
+            <div class="guide-step-title">2. Bust / Chest</div>
+            <div class="guide-step-desc">Around fullest part of chest, keeping tape horizontal.</div>
+        </div>
+        <div class="guide-step">
+            <div class="guide-step-title">3. Natural Waist</div>
+            <div class="guide-step-desc">Around narrowest natural waistline above navel.</div>
+        </div>
+        <div class="guide-step">
+            <div class="guide-step-title">4. Hips</div>
+            <div class="guide-step-desc">Around fullest part of hips & buttocks standing straight.</div>
+        </div>
+        <div class="guide-step">
+            <div class="guide-step-title">5. Arm & Sleeve Length</div>
+            <div class="guide-step-desc">From shoulder tip down slightly bent arm to wrist bone.</div>
+        </div>
+        <div class="guide-step">
+            <div class="guide-step-title">6. Trouser Length & Inseam</div>
+            <div class="guide-step-desc">Outseam from waist to ankle; Inseam from crotch to floor.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Improved Scrollable Measurement Table (Req 11 & Req 4: Delete Measurement) -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h2 class="card-title" style="margin-bottom: 0;">{{ 'MyLocker'|t }}</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">
+                Scroll horizontally to view all measurement columns. Old records are preserved.
+            </p>
+        </div>
+    </div>
+
+    <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color);">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Record ID</th>
+                    <th>{{ 'Date'|t }}</th>
+                    <th>{{ 'Unit'|t }}</th>
+                    <th>{{ 'Chest'|t }}</th>
+                    <th>{{ 'Waist'|t }}</th>
+                    <th>{{ 'Hip'|t }}</th>
+                    <th>{{ 'Shoulder'|t }}</th>
+                    <th>{{ 'SleeveLength'|t }}</th>
+                    <th>{{ 'DressLength'|t }}</th>
+                    <th>{{ 'Neck'|t }}</th>
+                    <th>{{ 'ArmLength'|t }}</th>
+                    <th>{{ 'TrouserLength'|t }}</th>
+                    <th>{{ 'Inseam'|t }}</th>
+                    <th style="text-align: right; padding-right: 20px;">{{ 'Actions'|t }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in customer_measurements %}
+                    <tr>
+                        <td style="font-weight: 700; color: var(--dark-brown);">{{ m.measurement_code }}</td>
+                        <td>{{ m.measurement_date }}</td>
+                        <td><span class="badge" style="background: #FAF0E8; color: var(--dark-brown);">{{ m.unit }}</span></td>
+                        <td>{{ m.chest or '—' }}</td>
+                        <td>{{ m.waist or '—' }}</td>
+                        <td>{{ m.hip or '—' }}</td>
+                        <td>{{ m.shoulder or '—' }}</td>
+                        <td>{{ m.sleeve_length or '—' }}</td>
+                        <td>{{ m.dress_length or '—' }}</td>
+                        <td>{{ m.neck or '—' }}</td>
+                        <td>{{ m.arm_length or '—' }}</td>
+                        <td>{{ m.trouser_length or '—' }}</td>
+                        <td>{{ m.inseam or '—' }}</td>
+                        <td style="text-align: right;">
+                            <!-- Delete Measurement Button (Req 4) -->
+                            <button type="button" class="btn-action-delete" onclick="openDeleteMeasModal({{ m.id }}, '{{ m.measurement_code }}')">
+                                <i class="fa-solid fa-trash-can"></i> {{ 'Delete'|t }}
+                            </button>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="14" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            No measurements recorded yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Contact Number Update (Req 9) -->
+<div class="form-grid-2">
+    <div class="card">
+        <h3 class="card-title" style="font-size: 20px;">{{ 'UpdatePrimaryContact'|t }}</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+            Current Contact: <strong>{{ customer.primary_contact }}</strong>
+        </p>
+        <form method="POST" action="{{ url_for('customers.customer_update_phone', customer_id=customer.id) }}" style="display: flex; gap: 10px;">
+            <input type="tel" name="new_phone" class="form-control" placeholder="New phone number" required>
+            <button type="submit" class="btn btn-sm">
+                <i class="fa-solid fa-check"></i> {{ 'UpdateNumber'|t }}
+            </button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title" style="font-size: 20px;">{{ 'ContactHistory'|t }}</h3>
+        <ul style="list-style: none; font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
+            {% for c in contact_history %}
+                <li style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border-color);">
+                    <span><strong>{{ c.phone_number }}</strong> ({{ c.type }})</span>
+                    <span style="color: var(--text-muted);">{{ c.created_at.strftime('%Y-%m-%d') if c.created_at else '' }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Confirmation Modals (Req 3, 4) -->
+<!-- Cancel Order Modal -->
+<div id="cancelOrderModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 class="modal-title">{{ 'CancelOrder'|t }}</h3>
+        <p class="modal-body" id="cancelModalText">
+            {{ 'CancelOrderConfirm'|t }}
+        </p>
+        <form id="cancelOrderForm" method="POST" action="">
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('cancelOrderModal')">{{ 'Cancel'|t }}</button>
+                <button type="submit" class="btn btn-danger">{{ 'CancelOrder'|t }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Measurement Modal -->
+<div id="deleteMeasModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 class="modal-title">{{ 'DeleteMeasurement'|t }}</h3>
+        <p class="modal-body" id="deleteMeasText">
+            {{ 'DeleteMeasurementConfirm'|t }}
+        </p>
+        <form id="deleteMeasForm" method="POST" action="">
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteMeasModal')">{{ 'Cancel'|t }}</button>
+                <button type="submit" class="btn btn-danger">{{ 'ConfirmDelete'|t }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openCancelModal(orderId, orderCode) {
+        const form = document.getElementById('cancelOrderForm');
+        form.action = `/orders/${orderId}/cancel`;
+        document.getElementById('cancelModalText').innerText = `Are you sure you want to cancel order ${orderCode}?`;
+        document.getElementById('cancelOrderModal').classList.add('active');
+    }
+
+    function openDeleteMeasModal(measId, measCode) {
+        const form = document.getElementById('deleteMeasForm');
+        form.action = `/measurements/${measId}/delete`;
+        document.getElementById('deleteMeasText').innerText = `Are you sure you want to permanently delete measurement record ${measCode}?`;
+        document.getElementById('deleteMeasModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+</script>
+{% endblock %}

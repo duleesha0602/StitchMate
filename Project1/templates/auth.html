@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StitchMate · {{ 'WelcomeTitle'|t }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="auth-page">
+
+<!-- Welcome / Splash Screen (Req 1) -->
+{% if show_splash %}
+<div id="splashScreen" class="splash-overlay">
+    <div class="splash-content">
+        <div class="splash-icon">
+            <i class="fa-solid fa-scissors"></i>
+        </div>
+        <h1 class="splash-title">StitchMate</h1>
+        <p class="splash-tagline">"Your Style, Perfectly Measured."</p>
+        <p class="splash-sub">Tailor Customer Management & Custom Measurement Locker</p>
+        <button type="button" class="btn btn-pill" onclick="closeSplash()" style="margin-top: 15px;">
+            Enter Atelier &rarr;
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<div class="auth-card">
+    <!-- Language Switcher in Auth Card (Req 8) -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+        <div class="lang-switcher" style="margin-bottom: 0; background: #F8EFE8; width: 140px;">
+            <a href="{{ url_for('language.set_language', lang='en') }}" class="lang-btn {% if current_lang == 'en' %}active{% endif %}" style="color: var(--dark-brown);">
+                EN
+            </a>
+            <a href="{{ url_for('language.set_language', lang='si') }}" class="lang-btn {% if current_lang == 'si' %}active{% endif %}" style="color: var(--dark-brown);">
+                සිංහල
+            </a>
+        </div>
+    </div>
+
+    <div class="auth-header">
+        <a href="#" class="auth-logo">
+            <span class="auth-logo-icon"><i class="fa-solid fa-scissors"></i></span>
+            <span class="auth-title">StitchMate</span>
+        </a>
+        <p class="auth-subtitle">{{ 'Tagline'|t }}</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Tabs: Tailor Login | Customer Login | Register Tailor -->
+    <div class="auth-tabs">
+        <button type="button" class="auth-tab-btn {% if active_tab == 'tailor_login' or not active_tab %}active{% endif %}" onclick="switchTab('tailor_login')">
+            Tailor Login
+        </button>
+        <button type="button" class="auth-tab-btn {% if active_tab == 'customer_login' %}active{% endif %}" onclick="switchTab('customer_login')">
+            Customer Login
+        </button>
+        {% if not has_tailor %}
+        <button type="button" class="auth-tab-btn {% if active_tab == 'tailor_register' %}active{% endif %}" onclick="switchTab('tailor_register')">
+            Register Tailor
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- 1. Tailor Login Form -->
+    <div id="tailor_login" class="tab-content {% if active_tab == 'tailor_login' or not active_tab %}active{% endif %}">
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <input type="hidden" name="login_type" value="tailor">
+            <div class="form-group">
+                <label class="form-label">Tailor Email / Username <span class="req">*</span></label>
+                <input type="text" name="username" class="form-control" placeholder="tailor@stitchmate.lk" required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password <span class="req">*</span></label>
+                <div class="password-field-wrapper">
+                    <input type="password" name="password" id="tailor_pwd" class="form-control" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('tailor_pwd', 'eye_tailor')" title="{{ 'ShowPassword'|t }}">
+                        <i id="eye_tailor" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn" style="width: 100%; margin-top: 15px;">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In as Tailor
+            </button>
+        </form>
+
+        {% if not has_tailor %}
+            <p style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+                First time setup? <a href="javascript:void(0)" onclick="switchTab('tailor_register')" style="color: var(--soft-brown); font-weight: 600;">Register the Atelier Account</a>
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- 2. Customer Login Form -->
+    <div id="customer_login" class="tab-content {% if active_tab == 'customer_login' %}active{% endif %}">
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <input type="hidden" name="login_type" value="customer">
+            <div class="form-group">
+                <label class="form-label">Customer Username / Code <span class="req">*</span></label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. nilu or CUS001" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password <span class="req">*</span></label>
+                <div class="password-field-wrapper">
+                    <input type="password" name="password" id="cust_pwd" class="form-control" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('cust_pwd', 'eye_cust')" title="{{ 'ShowPassword'|t }}">
+                        <i id="eye_cust" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="btn" style="width: 100%; margin-top: 15px;">
+                <i class="fa-solid fa-user-check"></i> Sign In to My Account
+            </button>
+        </form>
+        <p style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+            Walk-in customers can request online access directly from the atelier tailor.
+        </p>
+    </div>
+
+    <!-- 3. Tailor Registration Form (Only active if no tailor registered yet) -->
+    {% if not has_tailor %}
+    <div id="tailor_register" class="tab-content {% if active_tab == 'tailor_register' %}active{% endif %}">
+        <div class="alert alert-info" style="font-size: 12px; margin-bottom: 18px;">
+            <i class="fa-solid fa-lock"></i>
+            <span>System Rule: Only one primary Tailor account can be registered for this atelier.</span>
+        </div>
+        <form method="POST" action="{{ url_for('auth.register_tailor') }}">
+            <div class="form-group">
+                <label class="form-label">Tailor Full Name <span class="req">*</span></label>
+                <input type="text" name="name" class="form-control" placeholder="Kavinda Perera" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Shop / Atelier Name <span class="req">*</span></label>
+                <input type="text" name="shop_name" class="form-control" placeholder="StitchMate Atelier" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address <span class="req">*</span></label>
+                <input type="email" name="email" class="form-control" placeholder="tailor@stitchmate.lk" required>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Primary Contact <span class="req">*</span></label>
+                    <input type="tel" name="primary_contact" class="form-control" placeholder="0771234567" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Shop Address</label>
+                    <input type="text" name="address" class="form-control" placeholder="Colombo, Sri Lanka">
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Password <span class="req">*</span></label>
+                    <div class="password-field-wrapper">
+                        <input type="password" name="password" id="reg_pwd" class="form-control" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('reg_pwd', 'eye_reg')" title="{{ 'ShowPassword'|t }}">
+                            <i id="eye_reg" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password <span class="req">*</span></label>
+                    <div class="password-field-wrapper">
+                        <input type="password" name="confirm_password" id="reg_confirm_pwd" class="form-control" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('reg_confirm_pwd', 'eye_reg_c')" title="{{ 'ShowPassword'|t }}">
+                            <i id="eye_reg_c" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn" style="width: 100%; margin-top: 15px;">
+                <i class="fa-solid fa-user-plus"></i> Create Atelier Account
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.auth-tab-btn').forEach(el => el.classList.remove('active'));
+        
+        const targetContent = document.getElementById(tabId);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+        event.currentTarget.classList.add('active');
+    }
+
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        } else {
+            input.type = 'password';
+            if (icon) {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    }
+
+    function closeSplash() {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.classList.add('fade-out');
+            setTimeout(() => splash.remove(), 800);
+        }
+    }
+
+    // Auto close splash screen after 2.8 seconds
+    document.addEventListener('DOMContentLoaded', () => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            setTimeout(closeSplash, 2800);
+        }
+    });
+</script>
+
+</body>
+</html>

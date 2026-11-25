@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ customer.name }} · Customer Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ customer.name }}</h1>
+        <p class="page-subtitle">{{ customer.customer_code }} · {{ customer.nickname }} ({{ customer.gender }})</p>
+    </div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <!-- Role-based call: Tailor calls customer (Req 6) -->
+        <a href="tel:{{ customer.primary_contact }}" class="btn">
+            <i class="fa-solid fa-phone"></i> {{ 'Call'|t }} {{ customer.nickname }}
+        </a>
+        {% if session.get('role') == 'tailor' %}
+            <button type="button" class="btn btn-danger" onclick="openDeleteModal({{ customer.id }}, '{{ customer.name }}', '{{ customer.customer_code }}')">
+                <i class="fa-solid fa-trash-can"></i> {{ 'Delete'|t }}
+            </button>
+            <a href="{{ url_for('customers.customers_list') }}" class="btn btn-secondary">
+                &larr; Back to Customers
+            </a>
+        {% else %}
+            <a href="{{ url_for('customer_portal.customer_portal') }}" class="btn btn-secondary">
+                &larr; Back to Locker
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="form-grid-3" style="align-items: start;">
+    <!-- Customer Details Card -->
+    <div class="card" style="grid-column: span 1;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            {% if customer.photo %}
+                <img src="{{ url_for('static', filename='uploads/' ~ customer.photo) }}" alt="{{ customer.nickname }}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--dusty-pink); box-shadow: 0 4px 14px rgba(89, 67, 63, 0.1);">
+            {% else %}
+                <div style="width: 90px; height: 90px; border-radius: 50%; background: var(--dusty-pink); color: var(--dark-brown); font-size: 36px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">
+                    {{ customer.nickname[:1] }}
+                </div>
+            {% endif %}
+            <h3 style="margin-top: 14px; font-size: 22px;">{{ customer.name }}</h3>
+            <span class="badge badge-{{ customer.login_status|lower }}" style="margin-top: 6px;">
+                {{ customer.login_status }} Customer
+            </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <div>
+                <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">{{ 'CallingName'|t }}:</strong>
+                <div>{{ customer.nickname }}</div>
+            </div>
+            <div>
+                <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">{{ 'Gender'|t }}:</strong>
+                <div>{{ customer.gender }}</div>
+            </div>
+            <div>
+                <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">{{ 'PrimaryContact'|t }}:</strong>
+                <div style="font-weight: 600;">{{ customer.primary_contact }}</div>
+            </div>
+            <div>
+                <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">{{ 'Address'|t }}:</strong>
+                <div>{{ customer.address or 'No address provided' }}</div>
+            </div>
+            <div>
+                <strong style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">{{ 'JoinedAtelier'|t }}:</strong>
+                <div>{{ customer.created_at.strftime('%Y-%m-%d') if customer.created_at else 'Recent' }}</div>
+            </div>
+        </div>
+
+        <!-- Convert Walk-in to Online Account (Req 15: Eye toggle) -->
+        {% if customer.login_status == 'Walk-in' and session.get('role') == 'tailor' %}
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--dusty-pink);">
+                <h4 style="font-size: 15px; margin-bottom: 8px;">{{ 'CreateOnlineAccount'|t }}</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Convert this walk-in patron to online customer access.</p>
+                <form method="POST" action="{{ url_for('customers.customer_create_account', customer_id=customer.id) }}">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size: 12px;">Username</label>
+                        <input type="text" name="username" class="form-control" value="{{ customer.nickname|lower }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-size: 12px;">Password</label>
+                        <div class="password-field-wrapper">
+                            <input type="password" name="password" id="convert_pwd" class="form-control" placeholder="••••••••" required>
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('convert_pwd', 'eye_convert')" title="{{ 'ShowPassword'|t }}">
+                                <i id="eye_convert" class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-sm" style="width: 100%;">
+                        <i class="fa-solid fa-key"></i> {{ 'EnableOnlineAccess'|t }}
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Contact History & Activities Card -->
+    <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 24px;">
+        <!-- Contact Number History (Req 9) -->
+        <div class="card" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 class="card-title" style="margin-bottom: 0; font-size: 22px;">{{ 'ContactHistory'|t }}</h3>
+                <span style="font-size: 12px; color: var(--text-muted);">{{ 'ContactHistorySub'|t }}</span>
+            </div>
+
+            <table class="table-custom" style="font-size: 13px;">
+                <thead>
+                    <tr>
+                        <th>Phone Number</th>
+                        <th>Type / Status</th>
+                        <th>Primary</th>
+                        <th>Recorded Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for num in contact_history %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ num.phone_number }}</td>
+                            <td>
+                                <span class="badge" style="background: {{ '#E8C6C8' if num.type == 'Current' else '#EDE6E3' }}; color: var(--dark-brown);">
+                                    {{ num.type }}
+                                </span>
+                            </td>
+                            <td>{{ 'Yes' if num.is_primary else 'No' }}</td>
+                            <td>{{ num.created_at.strftime('%Y-%m-%d %H:%M') if num.created_at else '-' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Update contact number -->
+            {% if session.get('role') == 'tailor' or session.get('customer_id') == customer.id %}
+                <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+                    <h4 style="font-size: 14px; margin-bottom: 10px;">{{ 'UpdatePrimaryContact'|t }}</h4>
+                    <form method="POST" action="{{ url_for('customers.customer_update_phone', customer_id=customer.id) }}" style="display: flex; gap: 10px;">
+                        <input type="tel" name="new_phone" class="form-control" placeholder="Enter new phone number" required style="max-width: 250px;">
+                        <button type="submit" class="btn btn-sm">
+                            <i class="fa-solid fa-arrows-rotate"></i> {{ 'UpdateNumber'|t }}
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Orders for this customer -->
+        <div class="card" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 class="card-title" style="margin-bottom: 0; font-size: 22px;">Orders for {{ customer.nickname }}</h3>
+                {% if session.get('role') == 'tailor' %}
+                    <a href="{{ url_for('orders.order_new') }}?customer_id={{ customer.id }}" class="btn btn-sm">
+                        <i class="fa-solid fa-plus"></i> {{ 'NewOrder'|t }}
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; flex-direction: column;">
+                {% for o in customer_orders %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #F5EAE6;">
+                        <div>
+                            <strong>{{ o.order_code }}</strong> · {{ o.clothing_type }}
+                            <div style="font-size: 12px; color: var(--text-muted);">{{ 'Due'|t }}: {{ o.due_date }} | {{ 'Balance'|t }}: LKR {{ '{:,.2f}'.format(o.remaining_balance) }}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="badge badge-{{ o.status|lower }}">{{ o.status }}</span>
+                            <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="btn-action-view" style="font-size: 11px;">{{ 'View'|t }}</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <p style="color: var(--text-muted); font-size: 13px;">No orders found for this customer.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Customer Modal (Req 3) -->
+<div id="deleteCustomerModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 class="modal-title">{{ 'DeleteCustomerTitle'|t }}</h3>
+        <p class="modal-body" id="deleteModalText">
+            {{ 'DeleteCustomerConfirm'|t }}
+        </p>
+        <form id="deleteCustomerForm" method="POST" action="">
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteCustomerModal')">{{ 'Cancel'|t }}</button>
+                <button type="submit" class="btn btn-danger">{{ 'ConfirmDelete'|t }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openDeleteModal(custId, custName, custCode) {
+        const form = document.getElementById('deleteCustomerForm');
+        form.action = `/customers/${custId}/delete`;
+        document.getElementById('deleteModalText').innerText = `Are you sure you want to permanently delete customer ${custName} (${custCode}) and all associated orders, measurements, and records?`;
+        document.getElementById('deleteCustomerModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+</script>
+{% endblock %}

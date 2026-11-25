@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'WorkSchedule'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<!-- Header matching screenshot ss5.PNG -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'WorkSchedule'|t }}</h1>
+        <p class="page-subtitle">{{ 'WorkScheduleSubtitle'|t }}</p>
+    </div>
+</div>
+
+<!-- 4 Columns matching screenshot ss5.PNG -->
+<div class="schedule-grid">
+    <!-- 1. Overdue Column -->
+    <div class="schedule-col-card overdue">
+        <div class="schedule-header">
+            <h2 class="schedule-col-title">{{ 'Overdue'|t }} ({{ overdue_orders|length }})</h2>
+            <p class="schedule-col-sub">Past due and not yet ready</p>
+        </div>
+        <div class="schedule-items">
+            {% for o in overdue_orders %}
+                <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="schedule-item-card">
+                    <div class="schedule-item-top">
+                        <span class="schedule-item-code">{{ o.order_code }}</span>
+                        <span class="badge badge-{{ o.status|lower }}">{{ o.status }}</span>
+                    </div>
+                    <div class="schedule-item-garment">{{ o.clothing_type }} · {{ o.nickname }}</div>
+                    <div class="schedule-item-due" style="color: #BA3D4A; font-weight: 600;">Due {{ o.due_date }}</div>
+                </a>
+            {% else %}
+                <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-top: 40px;">
+                    No overdue commissions!
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 2. Due Today Column -->
+    <div class="schedule-col-card">
+        <div class="schedule-header">
+            <h2 class="schedule-col-title">{{ 'DueToday'|t }} ({{ due_today_orders|length }})</h2>
+            <p class="schedule-col-sub">{{ 'HandOverToday'|t }}</p>
+        </div>
+        <div class="schedule-items">
+            {% for o in due_today_orders %}
+                <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="schedule-item-card">
+                    <div class="schedule-item-top">
+                        <span class="schedule-item-code">{{ o.order_code }}</span>
+                        <span class="badge badge-{{ o.status|lower }}">{{ o.status }}</span>
+                    </div>
+                    <div class="schedule-item-garment">{{ o.clothing_type }} · {{ o.nickname }}</div>
+                    <div class="schedule-item-due">Due {{ o.due_date }}</div>
+                </a>
+            {% else %}
+                <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-top: 40px;">
+                    Nothing due today.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 3. Upcoming Column -->
+    <div class="schedule-col-card">
+        <div class="schedule-header">
+            <h2 class="schedule-col-title">Upcoming ({{ upcoming_orders|length }})</h2>
+            <p class="schedule-col-sub">{{ 'DueLater'|t }}</p>
+        </div>
+        <div class="schedule-items">
+            {% for o in upcoming_orders %}
+                <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="schedule-item-card">
+                    <div class="schedule-item-top">
+                        <span class="schedule-item-code">{{ o.order_code }}</span>
+                        <span class="badge badge-{{ o.status|lower }}">{{ o.status }}</span>
+                    </div>
+                    <div class="schedule-item-garment">{{ o.clothing_type }} · {{ o.nickname }}</div>
+                    <div class="schedule-item-due">Due {{ o.due_date }}</div>
+                </a>
+            {% else %}
+                <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-top: 40px;">
+                    No upcoming commissions scheduled.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 4. Ready Column -->
+    <div class="schedule-col-card ready">
+        <div class="schedule-header">
+            <h2 class="schedule-col-title">{{ 'Ready'|t }} ({{ ready_orders|length }})</h2>
+            <p class="schedule-col-sub">{{ 'WaitingPickup'|t }}</p>
+        </div>
+        <div class="schedule-items">
+            {% for o in ready_orders %}
+                <a href="{{ url_for('orders.order_detail', order_id=o.id) }}" class="schedule-item-card" style="border-color: #D3E8DC;">
+                    <div class="schedule-item-top">
+                        <span class="schedule-item-code">{{ o.order_code }}</span>
+                        <span class="badge badge-ready">{{ 'Ready'|t }}</span>
+                    </div>
+                    <div class="schedule-item-garment">{{ o.clothing_type }} · {{ o.nickname }}</div>
+                    <div class="schedule-item-due">Due {{ o.due_date }}</div>
+                </a>
+            {% else %}
+                <p style="color: var(--text-muted); font-size: 13px; text-align: center; margin-top: 40px;">
+                    No orders awaiting pickup.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

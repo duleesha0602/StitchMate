@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'TailorProfile'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'TailorProfile'|t }}</h1>
+        <p class="page-subtitle">Manage your atelier workshop identity, brand name, and patron contact info.</p>
+    </div>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+        &larr; Back to Dashboard
+    </a>
+</div>
+
+<div class="form-grid-3" style="align-items: start;">
+    <!-- Profile Card Preview -->
+    <div class="card" style="grid-column: span 1; text-align: center;">
+        <div style="margin-bottom: 20px;">
+            {% if profile.photo %}
+                <img src="{{ url_for('static', filename='uploads/' ~ profile.photo) }}" alt="Tailor" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid var(--dusty-pink); box-shadow: 0 6px 20px rgba(89, 67, 63, 0.15);">
+            {% else %}
+                <div style="width: 110px; height: 110px; border-radius: 50%; background: var(--dusty-pink); color: var(--dark-brown); font-size: 42px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">
+                    {{ profile.name[:1] }}
+                </div>
+            {% endif %}
+            <h3 style="margin-top: 14px; font-size: 22px;">{{ profile.name }}</h3>
+            <p style="color: var(--soft-brown); font-weight: 600; font-size: 14px;">{{ profile.shop_name }}</p>
+        </div>
+
+        <div style="text-align: left; border-top: 1px solid var(--border-color); padding-top: 16px; font-size: 13px; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+                <strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Primary Phone:</strong>
+                <div style="font-weight: 600;">{{ profile.primary_contact }}</div>
+            </div>
+            <div>
+                <strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Email:</strong>
+                <div>{{ profile.email }}</div>
+            </div>
+            <div>
+                <strong style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Atelier Address:</strong>
+                <div>{{ profile.address or 'No address set' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Form (Req 5) -->
+    <div class="card" style="grid-column: span 2;">
+        <h2 class="card-title">Edit Atelier Details</h2>
+        <form method="POST" action="{{ url_for('profile.tailor_profile') }}" enctype="multipart/form-data">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Tailor Full Name <span class="req">*</span></label>
+                    <input type="text" name="name" class="form-control" value="{{ profile.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Brand / Shop Name <span class="req">*</span></label>
+                    <input type="text" name="shop_name" class="form-control" value="{{ profile.shop_name }}" required>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Email Address <span class="req">*</span></label>
+                    <input type="email" name="email" class="form-control" value="{{ profile.email }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Primary Contact Number <span class="req">*</span></label>
+                    <input type="tel" name="primary_contact" class="form-control" value="{{ profile.primary_contact }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Shop Address</label>
+                <textarea name="address" class="form-control" rows="2">{{ profile.address or '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Change Profile Photo</label>
+                <input type="file" name="photo" class="form-control" accept="image/*">
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Recommended: Square portrait image (JPG, PNG, WEBP)</p>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <button type="submit" class="btn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

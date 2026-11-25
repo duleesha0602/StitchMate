@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}New Order · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">New Order</h1>
+        <p class="page-subtitle">Create a bespoke clothing commission.</p>
+    </div>
+    <a href="{{ url_for('orders_list') }}" class="btn btn-secondary">
+        &larr; Back to Orders
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('order_new') }}" enctype="multipart/form-data" id="newOrderForm">
+    <!-- Section 01: Customer Information -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">01</span> Customer Information
+        </h2>
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">Select Customer <span class="req">*</span></label>
+                <select name="customer_id" id="customerSelect" class="form-control" required onchange="onCustomerChange(this.value)">
+                    <option value="" disabled {% if not selected_customer_id %}selected{% endif %}>Select Customer...</option>
+                    {% for c in customers %}
+                        <option value="{{ c.id }}" 
+                                data-name="{{ c.name }}" 
+                                data-nickname="{{ c.nickname }}" 
+                                data-phone="{{ c.primary_contact }}"
+                                {% if selected_customer_id == c.id %}selected{% endif %}>
+                            {{ c.nickname }} ({{ c.name }} · {{ c.customer_code }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Customer Name</label>
+                <input type="text" id="custNameDisplay" class="form-control" readonly style="background-color: #FAF4F0;" placeholder="Auto displayed">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contact Number</label>
+                <input type="text" id="custPhoneDisplay" class="form-control" readonly style="background-color: #FAF4F0;" placeholder="Auto displayed">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 02: Clothing Information -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">02</span> Clothing Information
+        </h2>
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">Clothing Type <span class="req">*</span></label>
+                <select name="clothing_type" id="clothingTypeSelect" class="form-control" required onchange="toggleOtherClothing(this.value)">
+                    <option value="Frock">Frock</option>
+                    <option value="Blouse">Blouse</option>
+                    <option value="Skirt">Skirt</option>
+                    <option value="Shirt">Shirt</option>
+                    <option value="Trouser">Trouser</option>
+                    <option value="Saree Jacket">Saree Jacket</option>
+                    <option value="Dress">Dress</option>
+                    <option value="Other">Other...</option>
+                </select>
+            </div>
+            <div class="form-group" id="otherClothingGroup" style="display: none;">
+                <label class="form-label">Other Clothing Name <span class="req">*</span></label>
+                <input type="text" name="other_clothing_name" id="otherClothingName" class="form-control" placeholder="e.g. Wedding Suit">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Measurement Record <span class="req">*</span></label>
+                <select name="measurement_id" id="measurementSelect" class="form-control" required>
+                    <option value="" disabled selected>Select Customer first...</option>
+                </select>
+            </div>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+            Need a new measurement? <a href="{{ url_for('measurement_add') }}" target="_blank" style="color: var(--soft-brown); font-weight: 600;">+ Add Measurement in new tab</a>
+        </p>
+    </div>
+
+    <!-- Section 03: Design Information matching screenshot ss7.PNG -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">03</span> Design
+        </h2>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Design description</label>
+                <textarea name="design_description" class="form-control" placeholder="Long sleeves, collar..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Design photo</label>
+                <input type="file" name="design_photo" class="form-control" accept="image/*">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 04: Fabric Information matching screenshot ss7.PNG -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">04</span> Fabric
+        </h2>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Fabric type</label>
+                <input type="text" name="fabric_type" class="form-control" placeholder="Cotton">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fabric colour</label>
+                <input type="text" name="fabric_colour" class="form-control" placeholder="Blue">
+            </div>
+        </div>
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Fabric description</label>
+                <textarea name="fabric_description" class="form-control" placeholder="Floral pattern"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fabric photo</label>
+                <input type="file" name="fabric_photo" class="form-control" accept="image/*">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 05: Order Information matching screenshot ss7.PNG -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">05</span> Order
+        </h2>
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label class="form-label">Order date <span class="req">*</span></label>
+                <input type="date" name="order_date" class="form-control" value="{{ today_date }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Due date <span class="req">*</span></label>
+                <input type="date" name="due_date" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Total price (LKR) <span class="req">*</span></label>
+                <input type="number" step="1" min="1" name="total_price" id="totalPrice" class="form-control" placeholder="e.g. 5000" required oninput="calculateBalance()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 06: Advance Payment -->
+    <div class="form-section">
+        <h2 class="form-section-title">
+            <span class="form-section-num">06</span> Advance Payment
+        </h2>
+        <div class="form-group">
+            <label class="form-label">Advance Paid? <span class="req">*</span></label>
+            <div class="form-radio-group">
+                <label class="form-radio-label">
+                    <input type="radio" name="advance_paid" value="no" checked onchange="toggleAdvance(false)">
+                    <span>No</span>
+                </label>
+                <label class="form-radio-label">
+                    <input type="radio" name="advance_paid" value="yes" onchange="toggleAdvance(true)">
+                    <span>Yes</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-grid-3" style="margin-top: 15px;">
+            <div class="form-group" id="advanceAmountGroup" style="display: none;">
+                <label class="form-label">Advance Amount (LKR) <span class="req">*</span></label>
+                <input type="number" step="1" min="0" name="advance_amount" id="advanceAmount" class="form-control" value="0" oninput="calculateBalance()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Remaining Balance (LKR)</label>
+                <input type="text" id="remainingBalanceDisplay" class="form-control" readonly style="background-color: #FAF4F0; font-weight: 700; color: var(--dark-brown);" value="0">
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 14px; margin-bottom: 50px;">
+        <button type="submit" class="btn">
+            <i class="fa-solid fa-check"></i> Create Order
+        </button>
+        <a href="{{ url_for('orders_list') }}" class="btn btn-secondary">
+            Cancel
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Measurements dataset passed from backend
+    const measurementsData = {{ measurements_json|safe }};
+
+    function onCustomerChange(customerId) {
+        const select = document.getElementById('customerSelect');
+        const opt = select.options[select.selectedIndex];
+        
+        document.getElementById('custNameDisplay').value = opt.getAttribute('data-name') || '';
+        document.getElementById('custPhoneDisplay').value = opt.getAttribute('data-phone') || '';
+
+        // Filter measurement records for this customer
+        const measSelect = document.getElementById('measurementSelect');
+        measSelect.innerHTML = '';
+        
+        const custMeas = measurementsData.filter(m => m.customer_id == customerId);
+        if (custMeas.length === 0) {
+            measSelect.innerHTML = '<option value="" disabled selected>No measurements on record for this customer!</option>';
+        } else {
+            measSelect.innerHTML = '<option value="" disabled selected>Select measurement record...</option>';
+            custMeas.forEach(m => {
+                const optEl = document.createElement('option');
+                optEl.value = m.id;
+                optEl.textContent = `${m.measurement_code} · ${m.measurement_date} (${m.unit})`;
+                measSelect.appendChild(optEl);
+            });
+            // Auto select latest measurement
+            if (custMeas.length > 0) {
+                measSelect.selectedIndex = 1;
+            }
+        }
+    }
+
+    function toggleOtherClothing(val) {
+        const otherGrp = document.getElementById('otherClothingGroup');
+        const otherInp = document.getElementById('otherClothingName');
+        if (val === 'Other') {
+            otherGrp.style.display = 'block';
+            otherInp.required = true;
+        } else {
+            otherGrp.style.display = 'none';
+            otherInp.required = false;
+        }
+    }
+
+    function toggleAdvance(hasAdvance) {
+        const advGrp = document.getElementById('advanceAmountGroup');
+        const advInp = document.getElementById('advanceAmount');
+        if (hasAdvance) {
+            advGrp.style.display = 'block';
+            advInp.required = true;
+        } else {
+            advGrp.style.display = 'none';
+            advInp.required = false;
+            advInp.value = '0';
+        }
+        calculateBalance();
+    }
+
+    function calculateBalance() {
+        const total = parseFloat(document.getElementById('totalPrice').value) || 0;
+        const advance = parseFloat(document.getElementById('advanceAmount').value) || 0;
+        
+        if (advance > total) {
+            alert('Advance amount cannot be greater than the Total Price!');
+            document.getElementById('advanceAmount').value = total;
+        }
+        
+        const balance = Math.max(0, total - parseFloat(document.getElementById('advanceAmount').value || 0));
+        document.getElementById('remainingBalanceDisplay').value = 'LKR ' + balance.toLocaleString();
+    }
+
+    // Auto trigger on initial load if customer is preselected
+    document.addEventListener('DOMContentLoaded', () => {
+        const select = document.getElementById('customerSelect');
+        if (select.value) {
+            onCustomerChange(select.value);
+        }
+    });
+</script>
+{% endblock %}

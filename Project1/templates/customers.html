@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Customers'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'Customers'|t }}</h1>
+        <p class="page-subtitle">{{ customers|length }} {{ 'CustomersSubtitle'|t }}</p>
+    </div>
+    <a href="{{ url_for('customers.customer_add') }}" class="btn">
+        <i class="fa-solid fa-plus"></i> {{ 'AddCustomer'|t }}
+    </a>
+</div>
+
+<!-- Search Input matching screenshot ss2.PNG -->
+<form method="GET" action="{{ url_for('customers.customers_list') }}">
+    <div class="search-wrapper">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" name="q" class="search-input" value="{{ search_query or '' }}" placeholder="{{ 'SearchPlaceholder'|t }}" oninput="liveFilterCustomers(this.value)">
+    </div>
+</form>
+
+<!-- Customers Table matching screenshot ss2.PNG + Delete (Req 3) -->
+<div class="table-container">
+    <table class="table-custom" id="customersTable">
+        <thead>
+            <tr>
+                <th>{{ 'ID'|t }}</th>
+                <th>{{ 'Name'|t }}</th>
+                <th>{{ 'Nickname'|t }}</th>
+                <th>{{ 'PrimaryContact'|t }}</th>
+                <th>{{ 'Gender'|t }}</th>
+                <th>{{ 'LoginStatus'|t }}</th>
+                <th style="text-align: right; padding-right: 28px;">{{ 'Actions'|t }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in customers %}
+                <tr class="customer-row" data-search="{{ c.customer_code }} {{ c.name }} {{ c.nickname }} {{ c.primary_contact }}">
+                    <td style="font-weight: 700; color: var(--dark-brown);">{{ c.customer_code }}</td>
+                    <td style="font-weight: 500;">{{ c.name }}</td>
+                    <td>{{ c.nickname }}</td>
+                    <td>{{ c.primary_contact }}</td>
+                    <td>{{ c.gender }}</td>
+                    <td>
+                        <span class="badge badge-{{ c.login_status|lower }}">
+                            {{ c.login_status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="action-group" style="justify-content: flex-end;">
+                            <a href="{{ url_for('customers.customer_profile', customer_id=c.id) }}" class="btn-action-view">{{ 'View'|t }}</a>
+                            <!-- Role-based call: Tailor calls customer (Req 6) -->
+                            <a href="tel:{{ c.primary_contact }}" class="btn-call" title="Call {{ c.nickname }}">
+                                <i class="fa-solid fa-phone"></i>
+                            </a>
+                            <!-- Delete Customer with Modal (Req 3) -->
+                            <button type="button" class="btn-action-delete" onclick="openDeleteModal({{ c.id }}, '{{ c.name }}', '{{ c.customer_code }}')" title="{{ 'Delete'|t }}">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        No customers found matching your criteria.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Delete Customer Confirmation Modal (Req 3) -->
+<div id="deleteCustomerModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 class="modal-title">{{ 'DeleteCustomerTitle'|t }}</h3>
+        <p class="modal-body" id="deleteModalText">
+            {{ 'DeleteCustomerConfirm'|t }}
+        </p>
+        <form id="deleteCustomerForm" method="POST" action="">
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteCustomerModal')">{{ 'Cancel'|t }}</button>
+                <button type="submit" class="btn btn-danger">{{ 'ConfirmDelete'|t }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function liveFilterCustomers(query) {
+        const q = query.toLowerCase().trim();
+        const rows = document.querySelectorAll('.customer-row');
+        rows.forEach(row => {
+            const text = row.getAttribute('data-search').toLowerCase();
+            row.style.display = text.includes(q) ? '' : 'none';
+        });
+    }
+
+    function openDeleteModal(custId, custName, custCode) {
+        const form = document.getElementById('deleteCustomerForm');
+        form.action = `/customers/${custId}/delete`;
+        document.getElementById('deleteModalText').innerText = `Are you sure you want to permanently delete customer ${custName} (${custCode}) and all associated orders, measurements, and records?`;
+        document.getElementById('deleteCustomerModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+</script>
+{% endblock %}

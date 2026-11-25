@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'AccountSecurity'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'AccountSecurity'|t }}</h1>
+        <p class="page-subtitle">Update your login username and secure account credentials.</p>
+    </div>
+</div>
+
+<div class="form-grid-2">
+    <!-- Form 1: Change Username (Req 14) -->
+    <div class="card">
+        <h2 class="card-title">{{ 'ChangeUsername'|t }}</h2>
+        <form method="POST" action="{{ url_for('settings.update_username') }}">
+            <div class="form-group">
+                <label class="form-label">Current Username</label>
+                <input type="text" class="form-control" value="{{ user.username }}" readonly style="background-color: #FAF4F0;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">New Username <span class="req">*</span></label>
+                <input type="text" name="username" class="form-control" placeholder="Enter new username or email" required>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-sm">
+                    <i class="fa-solid fa-check"></i> {{ 'SaveSecurity'|t }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Form 2: Change Password with Show/Hide Toggle (Req 14, Req 15) -->
+    <div class="card">
+        <h2 class="card-title">{{ 'ChangePassword'|t }}</h2>
+        <form method="POST" action="{{ url_for('settings.update_password') }}">
+            <div class="form-group">
+                <label class="form-label">{{ 'CurrentPassword'|t }} <span class="req">*</span></label>
+                <div class="password-field-wrapper">
+                    <input type="password" name="current_password" id="cur_pwd" class="form-control" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('cur_pwd', 'eye_cur')" title="{{ 'ShowPassword'|t }}">
+                        <i id="eye_cur" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">{{ 'NewPassword'|t }} <span class="req">*</span></label>
+                <div class="password-field-wrapper">
+                    <input type="password" name="new_password" id="new_pwd" class="form-control" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('new_pwd', 'eye_new')" title="{{ 'ShowPassword'|t }}">
+                        <i id="eye_new" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">{{ 'ConfirmNewPassword'|t }} <span class="req">*</span></label>
+                <div class="password-field-wrapper">
+                    <input type="password" name="confirm_password" id="conf_pwd" class="form-control" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePassword('conf_pwd', 'eye_conf')" title="{{ 'ShowPassword'|t }}">
+                        <i id="eye_conf" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button type="submit" class="btn btn-sm">
+                    <i class="fa-solid fa-key"></i> {{ 'ChangePassword'|t }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

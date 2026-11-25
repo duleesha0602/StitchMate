@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Notifications'|t }} · StitchMate{% endblock %}
+
+{% block content %}
+<!-- Header matching screenshot ss6.PNG -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ 'Notifications'|t }}</h1>
+        <p class="page-subtitle">{{ 'NotificationsSubtitle'|t }}</p>
+    </div>
+</div>
+
+<!-- Notification list matching screenshot ss6.PNG -->
+<div style="max-width: 900px;">
+    {% for n in notifications %}
+        <div class="notification-card {% if not n.is_read %}unread{% endif %}">
+            <div>
+                <div class="notif-title">{{ n.title }}</div>
+                <div class="notif-desc">{{ n.message }}</div>
+                <div class="notif-meta">
+                    {{ n.created_at.strftime('%m/%d/%Y, %I:%M:%S %p') if n.created_at else 'Just now' }}
+                    · 
+                    <span style="font-weight: 600; color: {{ 'var(--soft-brown)' if not n.is_read else 'var(--text-muted)' }};">
+                        {{ 'Unread'|t if not n.is_read else 'Read'|t }}
+                    </span>
+                </div>
+            </div>
+
+            {% if not n.is_read %}
+                <form method="POST" action="{{ url_for('notifications.notification_mark_read', notif_id=n.id) }}">
+                    <button type="submit" class="btn-action-view" style="border: none; cursor: pointer; padding: 8px 18px;">
+                        {{ 'MarkRead'|t }}
+                    </button>
+                </form>
+            {% else %}
+                <span style="font-size: 13px; color: var(--text-muted);"><i class="fa-solid fa-check"></i> {{ 'Read'|t }}</span>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="card" style="text-align: center; padding: 50px; color: var(--text-muted);">
+            <i class="fa-regular fa-bell-slash" style="font-size: 38px; color: var(--dusty-pink); margin-bottom: 14px;"></i>
+            <p>No notifications on record.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
